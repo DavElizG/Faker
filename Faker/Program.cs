@@ -1,3 +1,6 @@
+using Api.Application.Services;
+using Api.Application.Services.FakeDataGenerators;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,9 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<FakeAffiliateGeneratorService>();
+//builder.Services.AddHostedService<FakeAffiliateGeneratorService>();
+builder.Services.AddSingleton<FakeProductGeneratorService>();
 
 
 builder.Services.AddCors(options =>
