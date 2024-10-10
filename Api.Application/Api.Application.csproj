@@ -10,7 +10,6 @@
     <Folder Include="Commands\Handlers\" />
     <Folder Include="Behaviors\" />
     <Folder Include="Queries\Handlers\" />
-    <Folder Include="Services\FakeDataGenerators\" />
   </ItemGroup>
 
   <ItemGroup>

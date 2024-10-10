@@ -1,4 +1,5 @@
 using Api.Application.Services;
+using Api.Application.Services.FakeDataGenerators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<FakeAffiliateGeneratorService>();
 //builder.Services.AddHostedService<FakeAffiliateGeneratorService>();
+builder.Services.AddSingleton<FakeProductGeneratorService>();
+
 
 builder.Services.AddCors(options =>
 {
