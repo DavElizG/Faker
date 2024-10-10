@@ -6,41 +6,44 @@ using System.Threading.Tasks;
 using Bogus;
 using System.Threading;
 using Api.Domain.Entities;
+using Microsoft.Extensions.Hosting;
+using System.Timers;
+using Timer = System.Timers.Timer;
+
 
 namespace Api.Application.Services
 {
-    public class FakeAffiliateGeneratorService : BackgroundService
+    public class FakeAffiliateGeneratorService
     {
-        private readonly Faker<Affiliate> _faker;
-        private readonly List<Affiliate> _affiliates;
+        private readonly List<Affiliate> _affiliates = new List<Affiliate>();
+        private readonly Timer _timer;
 
         public FakeAffiliateGeneratorService()
         {
-            // Configuramos Bogus para generar datos aleatorios para negocios
-            _faker = new Faker<Affiliate>()
-                .RuleFor(a => a.Id, f => f.IndexFaker + 1)
-                .RuleFor(a => a.Name, f => f.Company.CompanyName())
-                .RuleFor(a => a.Address, f => f.Address.FullAddress())
-                .RuleFor(a => a.Email, f => f.Internet.Email())
-                .RuleFor(a => a.Phone, f => f.Phone.PhoneNumber());
-
-            _affiliates = new List<Affiliate>();
+            _timer = new Timer(10000); // Cada 10 segundos
+            _timer.Elapsed += GenerateAffiliate;
+            _timer.Start();
         }
 
-        // Método para obtener todos los negocios generados
-        public IEnumerable<Affiliate> GetAffiliates() => _affiliates;
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        private void GenerateAffiliate(object sender, ElapsedEventArgs e)
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                // Generar un nuevo negocio y agregarlo a la lista acumulativa
-                var newAffiliate = _faker.Generate();
-                _affiliates.Add(newAffiliate);
+            var faker = new Faker<Affiliate>()
+                .RuleFor(a => a.Id, f => Guid.NewGuid())
+                .RuleFor(a => a.Name, f => f.Company.CompanyName())
+                .RuleFor(a => a.Address, f => f.Address.FullAddress())
+                .RuleFor(a => a.PhoneNumber, f => f.Phone.PhoneNumber())
+                .RuleFor(a => a.Email, f => f.Internet.Email())
+                .RuleFor(a => a.Website, f => f.Internet.Url());
 
-                // Esperar un minuto antes de generar otro negocio
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
-            }
+            var affiliate = faker.Generate();
+            _affiliates.Add(affiliate);
+        }
+
+        public List<Affiliate> GetAffiliates() => _affiliates;
+
+        public void ForceGenerateAffiliate()
+        {
+            GenerateAffiliate(this, null);
         }
     }
 }
