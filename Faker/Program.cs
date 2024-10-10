@@ -1,4 +1,14 @@
+using Azure.Messaging.ServiceBus;
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Leer la cadena de conexión del Event Storage desde appsettings.json
+var eventStorageConnectionString = builder.Configuration["EventStorage:ConnectionString"];
+
+// Registrar ServiceBusClient para Azure Service Bus
+builder.Services.AddSingleton(new ServiceBusClient(eventStorageConnectionString));
+
 
 // Add services to the container.
 
