@@ -10,7 +10,15 @@
     <Folder Include="Commands\Handlers\" />
     <Folder Include="Behaviors\" />
     <Folder Include="Queries\Handlers\" />
-    <Folder Include="Services\FakeDataGenerators\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bogus" Version="35.6.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Api.Domain\Api.Domain.csproj" />
   </ItemGroup>
 
 </Project>
