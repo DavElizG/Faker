@@ -9,18 +9,19 @@ using Api.Domain.Entities;
 using Microsoft.Extensions.Hosting;
 using System.Timers;
 using Timer = System.Timers.Timer;
+using Api.Domain.Interfaces.Generators;
 
 
-namespace Api.Application.Services
+namespace Api.Application.Services.FakeDataGenerators
 {
-    public class FakeAffiliateGeneratorService
+    public class FakeAffiliateGeneratorService : IAffiliateGeneratorService
     {
         private readonly List<Affiliate> _affiliates = new List<Affiliate>();
         private readonly Timer _timer;
 
         public FakeAffiliateGeneratorService()
         {
-            _timer = new Timer(10000); // Cada 10 segundos
+            _timer = new Timer(30000); // Cada 10 segundos
             _timer.Elapsed += GenerateAffiliate;
             _timer.Start();
         }
@@ -47,4 +48,3 @@ namespace Api.Application.Services
         }
     }
 }
-

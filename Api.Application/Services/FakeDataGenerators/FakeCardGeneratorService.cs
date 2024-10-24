@@ -1,11 +1,13 @@
 ﻿using Api.Domain.Entities;
+using Api.Domain.Enums;
+using Api.Domain.Interfaces.Generators;
 using Bogus;
 using System.Collections.Generic;
 using System.Timers;
 
 namespace Api.Application.Services.FakeDataGenerators
 {
-    public class FakeCardGeneratorService
+    public class FakeCardGeneratorService : ICardGeneratorService
     {
         private readonly List<Card> _cards = new List<Card>();
         private readonly System.Timers.Timer _timer; // Fully qualify Timer
@@ -29,7 +31,8 @@ namespace Api.Application.Services.FakeDataGenerators
                 .RuleFor(c => c.Brand, f => f.PickRandom("Visa", "MasterCard", "Amex", "Discover", "JCB", "Diners Club", "UnionPay"))
                 .RuleFor(c => c.CVV, (f, c) => c.Brand == "Amex" || c.Brand == "Diners Club"
                     ? f.Random.Int(1000, 9999).ToString() // 4-digit CVV for Amex and Diners Club
-                    : f.Random.Int(100, 999).ToString());  // 3-digit CVV for other brands
+                    : f.Random.Int(100, 999).ToString())  // 3-digit CVV for other brands
+                .RuleFor(c => c.Status, f => f.PickRandom<CardStatus>()); // Assign a random CardStatus
 
             var card = faker.Generate();
             _cards.Add(card);

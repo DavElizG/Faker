@@ -15,4 +15,3 @@ namespace Api.Domain.Entities
         public string Website { get; set; }
     }
 }
-
