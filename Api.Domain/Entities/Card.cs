@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Api.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,6 @@ namespace Api.Domain.Entities
         public decimal Funds { get; set; }
         public string Brand { get; set; }
         public string CVV { get; set; }
-
+        public CardStatus Status { get; set; }     // Estado de la tarjeta (usando el enum)
     }
 }

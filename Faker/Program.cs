@@ -1,16 +1,21 @@
 using Api.Application.Services;
 using Api.Application.Services.FakeDataGenerators;
+using Api.Domain.Interfaces.Infraestructure;
+using Api.Domain.Interfaces;
+using Api.Infrastructure.DependencyInjection;
+using Api.Infrastructure.ErrorLog;
+using Api.Infrastructure.EventSource;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register the custom services
-builder.Services.AddSingleton<FakeAffiliateGeneratorService>();
-builder.Services.AddSingleton<FakeCardGeneratorService>(); // Register the card generator service
+
 
 builder.Services.AddCors(options =>
 {

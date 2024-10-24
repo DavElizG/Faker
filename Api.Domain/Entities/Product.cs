@@ -14,9 +14,9 @@ namespace Api.Domain.Entities
         public decimal Price { get; set; }
         public string Category { get; set; }
         public int Stock { get; set; }
+
+        // relacion con Afiliado
         public Guid AffiliateId { get; set; }
-    
-        public Affiliate? Affiliate { get; set; } // relacion con Afiliado
-    
+        public Affiliate? Affiliate { get; set; }
     }
 }
