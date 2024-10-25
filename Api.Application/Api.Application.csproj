@@ -7,14 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Commands\Handlers\" />
-    <Folder Include="Behaviors\" />
-    <Folder Include="Queries\Handlers\" />
-    <Folder Include="Services\FakeDataGenerators\" />
+    <Compile Remove="Behaviors\**" />
+    <Compile Remove="Queries\**" />
+    <EmbeddedResource Remove="Behaviors\**" />
+    <EmbeddedResource Remove="Queries\**" />
+    <None Remove="Behaviors\**" />
+    <None Remove="Queries\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Bogus" Version="35.6.1" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
   </ItemGroup>
 

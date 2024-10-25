@@ -1,15 +1,21 @@
 using Api.Application.Services;
+using Api.Application.Services.FakeDataGenerators;
+using Api.Domain.Interfaces.Infraestructure;
+using Api.Domain.Interfaces;
+using Api.Infrastructure.DependencyInjection;
+using Api.Infrastructure.ErrorLog;
+using Api.Infrastructure.EventSource;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
+// Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<FakeAffiliateGeneratorService>();
-//builder.Services.AddHostedService<FakeAffiliateGeneratorService>();
+
+
 
 builder.Services.AddCors(options =>
 {
@@ -20,11 +26,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-
 var app = builder.Build();
-
-
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -34,11 +36,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
+app.UseCors("NgOrigins");
 
 app.MapControllers();
-
-app.UseCors("NgOrigins");
 
 app.Run();
