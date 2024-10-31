@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Bogus;
 using Api.Domain.Entities;
+using Api.Domain.Interfaces.Generators;
 
 namespace Api.Application.Services.FakeDataGenerators
 {
-    public class FakeProductGeneratorService
+    public class FakeProductGeneratorService : IProductGeneratorService
     {
         private readonly List<Product> _products = new List<Product>();
 

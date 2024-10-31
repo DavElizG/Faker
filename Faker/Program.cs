@@ -8,14 +8,18 @@ using Api.Infrastructure.EventSource;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// Add services to the container.
+
+
+// Agrega servicios al contenedor.
+builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
+builder.Services.AddScoped<ICardModificationService, CardModificationService>();
+
+// Resto de la configuración de servicios
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-
 
 builder.Services.AddCors(options =>
 {
@@ -28,7 +32,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configuración de la canalización de solicitudes HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
