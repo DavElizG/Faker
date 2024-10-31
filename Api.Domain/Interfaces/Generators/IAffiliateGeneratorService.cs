@@ -9,6 +9,7 @@ namespace Api.Domain.Interfaces.Generators
 {
     public interface IAffiliateGeneratorService
     {
+        void GenerateAffiliates(int count);
         List<Affiliate> GetAffiliates();
         void ForceGenerateAffiliate();
     }

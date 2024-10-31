@@ -15,8 +15,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Configuración de servicios
+builder.Services.AddScoped<IPurchaseSimulationService, PurchaseSimulationService>();
+builder.Services.AddHostedService<PurchaseGenerationBackgroundService>();
+builder.Services.AddSingleton<IEventSource, EventSourceService>();
 
-
+// Configuración de CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "NgOrigins",
@@ -28,7 +32,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configuración del pipeline HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
