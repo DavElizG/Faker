@@ -20,6 +20,9 @@ namespace Api.Infrastructure.DependencyInjection
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddSingleton(new List<Api.Domain.Entities.Affiliate>());
+            services.AddSingleton(new List<Api.Domain.Entities.Card>());
+
             services.AddSingleton<IEventSource, EventSourceService>();
             services.AddSingleton<IErrorLogService, ErrorLogService>();
           

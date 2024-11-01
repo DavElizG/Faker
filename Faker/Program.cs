@@ -8,19 +8,19 @@ using Api.Infrastructure.EventSource;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// Add services to the container.
+
+// Agrega servicios al contenedor.
+builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
+builder.Services.AddScoped<ICardModificationService, CardModificationService>();
+
+// Resto de la configuraciÃ³n de servicios
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configuración de servicios
-builder.Services.AddScoped<IPurchaseSimulationService, PurchaseSimulationService>();
-builder.Services.AddHostedService<PurchaseGenerationBackgroundService>();
-builder.Services.AddSingleton<IEventSource, EventSourceService>();
 
-// Configuración de CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "NgOrigins",
@@ -32,7 +32,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configuración del pipeline HTTP
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
