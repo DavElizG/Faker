@@ -9,6 +9,7 @@ namespace Api.Domain.Interfaces.Generators
 {
     public interface ICardGeneratorService
     {
+        void GenerateCards(int count);
         List<Card> GetCards();
         void ForceGenerateCard();
     }

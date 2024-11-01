@@ -2,6 +2,7 @@
 using Api.Domain.Interfaces.Infraestructure;
 using Api.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Api.Application.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -14,12 +15,14 @@ namespace Faker.Controllers
         private readonly IEventSource _eventSource;
         private readonly IErrorLogService _errorLogService;
         private readonly ICardModificationService _cardModificationService;
+        private readonly IPurchaseSimulationService _purchaseSimulationService;
 
-        public PurchasesController(IEventSource eventSource, IErrorLogService errorLogService, ICardModificationService cardModificationService)
+        public PurchasesController(IEventSource eventSource, IErrorLogService errorLogService, ICardModificationService cardModificationService, IPurchaseSimulationService purchaseSimulationService)
         {
             _eventSource = eventSource;
             _errorLogService = errorLogService;
             _cardModificationService = cardModificationService;
+            _purchaseSimulationService = purchaseSimulationService;
         }
 
         // Endpoint para generar y enviar compras al Event Source
@@ -63,6 +66,23 @@ namespace Faker.Controllers
                 return StatusCode(500, $"Error al reintentar la compra: {ex.Message}");
             }
         }
+
+        [HttpPost("generate-purchases")]
+        public async Task<IActionResult> GeneratePurchases()
+        {
+            try
+            {
+                // Inicia la simulación y envío de compras manualmente
+                await _purchaseSimulationService.SimulatePurchases();
+                return Ok("Simulación de compras iniciada exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Ocurrió un error al generar las compras: {ex.Message}");
+            }
+        }
+
+
 
         // Endpoint para editar una tarjeta
         [HttpPut("edit-card")]
