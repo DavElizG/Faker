@@ -10,16 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 
-
 // Agrega servicios al contenedor.
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
 builder.Services.AddScoped<ICardModificationService, CardModificationService>();
 
-// Resto de la configuración de servicios
+// Resto de la configuraciÃ³n de servicios
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 builder.Services.AddCors(options =>
 {
@@ -32,7 +32,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configuración de la canalización de solicitudes HTTP
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

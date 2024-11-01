@@ -1,10 +1,9 @@
 ﻿using Api.Domain.Entities;
 using Api.Domain.Interfaces.Infraestructure;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -12,16 +11,19 @@ namespace Api.Infrastructure.EventSource
 {
     public class EventSourceService : IEventSource
     {
-        private const string ConnectionString = "Cadena-de-Conexion";
-        private const string QueueName = "dev-event-source-1";
-
         private readonly ServiceBusClient _client;
         private readonly ServiceBusSender _sender;
+        private readonly ILogger<EventSourceService> _logger;
 
-        public EventSourceService()
+        public EventSourceService(IConfiguration configuration, ILogger<EventSourceService> logger)
         {
-            _client = new ServiceBusClient(ConnectionString);
-            _sender = _client.CreateSender(QueueName);
+            // Cargar la cadena de conexión y el nombre de la cola desde la configuración
+            var connectionString = configuration["AzureServiceBus:ConnectionString"];
+            var queueName = configuration["AzureServiceBus:QueueName"];
+
+            _client = new ServiceBusClient(connectionString);
+            _sender = _client.CreateSender(queueName);
+            _logger = logger;
         }
 
         public void SendPurchaseEvent(Purchase purchase, bool isSuccess)
@@ -45,11 +47,11 @@ namespace Api.Infrastructure.EventSource
             try
             {
                 await _sender.SendMessageAsync(message);
-                Console.WriteLine($"Mensaje enviado: {messageContent}");
+                _logger.LogInformation("Mensaje enviado: {MessageContent}", messageContent);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+                _logger.LogError(ex, "Error al enviar mensaje: {MessageContent}", messageContent);
             }
         }
     }

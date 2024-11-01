@@ -1,25 +1,18 @@
-﻿using Api.Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+using Bogus;
+using Api.Domain.Entities;
 using Api.Domain.Enums;
 using Api.Domain.Interfaces.Generators;
-using Bogus;
-using System.Collections.Generic;
-using System.Timers;
 
 namespace Api.Application.Services.FakeDataGenerators
 {
     public class FakeCardGeneratorService : ICardGeneratorService
     {
         private readonly List<Card> _cards = new List<Card>();
-        private readonly System.Timers.Timer _timer; // Fully qualify Timer
 
-        public FakeCardGeneratorService()
-        {
-            _timer = new System.Timers.Timer(15000); // Every 15 seconds
-            _timer.Elapsed += GenerateCard;
-            _timer.Start();
-        }
-
-        private void GenerateCard(object sender, ElapsedEventArgs e)
+        public FakeCardGeneratorService() { }
+        public void GenerateCards(int count)
         {
             var faker = new Faker<Card>()
                 .RuleFor(c => c.Id, f => Guid.NewGuid())
@@ -30,19 +23,15 @@ namespace Api.Application.Services.FakeDataGenerators
                 .RuleFor(c => c.Funds, f => f.Random.Decimal(0, 10000))
                 .RuleFor(c => c.Brand, f => f.PickRandom("Visa", "MasterCard", "Amex", "Discover", "JCB", "Diners Club", "UnionPay"))
                 .RuleFor(c => c.CVV, (f, c) => c.Brand == "Amex" || c.Brand == "Diners Club"
-                    ? f.Random.Int(1000, 9999).ToString() // 4-digit CVV for Amex and Diners Club
-                    : f.Random.Int(100, 999).ToString())  // 3-digit CVV for other brands
-                .RuleFor(c => c.Status, f => f.PickRandom<CardStatus>()); // Assign a random CardStatus
+                    ? f.Random.Int(1000, 9999).ToString()
+                    : f.Random.Int(100, 999).ToString())
+                .RuleFor(c => c.Status, f => f.PickRandom<CardStatus>());
 
-            var card = faker.Generate();
-            _cards.Add(card);
+            _cards.AddRange(faker.Generate(count));
         }
 
         public List<Card> GetCards() => _cards;
 
-        public void ForceGenerateCard()
-        {
-            GenerateCard(this, null);
-        }
+        public void ForceGenerateCard() => GenerateCards(1);
     }
 }
