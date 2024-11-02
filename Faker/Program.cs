@@ -10,14 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 
-// Agrega servicios al contenedor.
-builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
-builder.Services.AddScoped<ICardModificationService, CardModificationService>();
 
-/////faltaban estos servicios
-builder.Services.AddScoped<IPurchaseSimulationService, PurchaseSimulationService>();
-builder.Services.AddHostedService<PurchaseGenerationBackgroundService>();
+builder.Services.AddInfrastructureServices(builder.Configuration);
+
 
 // Resto de la configuración de servicios
 builder.Services.AddControllers();
