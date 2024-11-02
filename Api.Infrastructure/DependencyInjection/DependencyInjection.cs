@@ -36,6 +36,13 @@ namespace Api.Infrastructure.DependencyInjection
             services.AddSingleton(new List<Affiliate>());
             services.AddSingleton(new List<Card>());
 
+            services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
+            services.AddScoped<ICardModificationService, CardModificationService>();
+
+            /////faltaban estos servicios
+            services.AddScoped<IPurchaseSimulationService, PurchaseSimulationService>();
+            services.AddHostedService<PurchaseGenerationBackgroundService>();
+
             return services;
         }
     }

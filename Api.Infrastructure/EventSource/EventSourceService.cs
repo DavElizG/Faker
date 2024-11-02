@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Api.Infrastructure.EventSource
@@ -33,15 +34,66 @@ namespace Api.Infrastructure.EventSource
 
         public async Task SendPurchaseEventAsync(Purchase purchase, bool isSuccess)
         {
+            // Crear el mensaje completo con todos los datos necesarios
             var eventMessage = new
             {
-                PurchaseId = purchase.Id,
+                Id = purchase.Id,
                 ProductId = purchase.ProductId,
+                Product = purchase.Product == null ? null : new
+                {
+                    purchase.Product.Id,
+                    purchase.Product.Name,
+                    purchase.Product.Description,
+                    purchase.Product.Price,
+                    purchase.Product.Category,
+                    purchase.Product.Stock,
+                    purchase.Product.AffiliateId,
+                    Affiliate = purchase.Product.Affiliate == null ? null : new
+                    {
+                        purchase.Product.Affiliate.Id,
+                        purchase.Product.Affiliate.Name,
+                        purchase.Product.Affiliate.Address,
+                        purchase.Product.Affiliate.PhoneNumber,
+                        purchase.Product.Affiliate.Email,
+                        purchase.Product.Affiliate.Website
+                    }
+                },
+                AffiliateId = purchase.AffiliateId,
+                Affiliate = purchase.Affiliate == null ? null : new
+                {
+                    purchase.Affiliate.Id,
+                    purchase.Affiliate.Name,
+                    purchase.Affiliate.Address,
+                    purchase.Affiliate.PhoneNumber,
+                    purchase.Affiliate.Email,
+                    purchase.Affiliate.Website
+                },
+                CardId = purchase.CardId,
+                Card = purchase.Card == null ? null : new
+                {
+                    purchase.Card.Id,
+                    purchase.Card.Name,
+                    purchase.Card.Email,
+                    purchase.Card.CreditCardNumber,
+                    purchase.Card.ExpiryDate,
+                    purchase.Card.Funds,
+                    purchase.Card.Brand,
+                    purchase.Card.CVV,
+                    purchase.Card.Status
+                },
+                PurchaseDate = purchase.PurchaseDate,
                 Amount = purchase.Amount,
-                IsSuccess = isSuccess
+                Status = purchase.Status,
+                IsSuccess = isSuccess // Indica si la compra fue exitosa o no
             };
 
-            var messageContent = JsonSerializer.Serialize(eventMessage);
+            // Serializar el mensaje completo a JSON, ignorando propiedades nulas
+            var messageContent = JsonSerializer.Serialize(eventMessage, new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                WriteIndented = false // Cambia a true si prefieres una salida más legible
+            });
+
             ServiceBusMessage message = new ServiceBusMessage(messageContent);
 
             try
@@ -54,5 +106,10 @@ namespace Api.Infrastructure.EventSource
                 _logger.LogError(ex, "Error al enviar mensaje: {MessageContent}", messageContent);
             }
         }
+
     }
 }
+
+
+
+
