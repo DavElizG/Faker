@@ -96,3 +96,15 @@
 25/10/2024 19:48:13: Error: La tarjeta con ID 4b58ec84-ca7c-4843-ad2d-9c4c7dff2e2e está inactiva.
 25/10/2024 19:48:18: Error: La tarjeta con ID 86214ff5-be05-4804-8d35-bf37a4951c0e está inactiva.
 25/10/2024 19:48:23: Error: La tarjeta con ID bafd81c9-f321-4416-b035-27b6d7369559 está inactiva.
+1/11/2024 19:46:58: Error: La tarjeta con ID c13d2018-41f9-479e-8628-f5cf15965600 está inactiva.
+1/11/2024 19:47:45: Error: La tarjeta con ID d557f907-718a-4289-bc08-ff019ee6bc67 está inactiva.
+1/11/2024 19:47:50: Error: La tarjeta con ID d6dd5bcc-24b1-47aa-92aa-3da13a58c717 está inactiva.
+1/11/2024 19:48:11: Error: La tarjeta con ID bb51a726-bf8e-43ac-a421-afa265b306d8 está inactiva.
+1/11/2024 19:48:37: Error: La tarjeta con ID 679e04b5-aa1d-4bad-98bb-299bf0524775 está inactiva.
+1/11/2024 19:48:42: Error: La tarjeta con ID 73c93eed-2d3d-4438-9bde-0e57d0a1c72d está inactiva.
+1/11/2024 19:48:47: Error: La tarjeta con ID 026bb7bb-65fc-46f2-ac9e-4b02ac448528 está inactiva.
+1/11/2024 19:48:52: Error: La tarjeta con ID 768d41fb-d304-4603-801f-dec51643f763 está inactiva.
+1/11/2024 19:48:57: Error: La tarjeta con ID 5516c411-0ef7-467a-a8c5-587bdfc4c0b9 está inactiva.
+1/11/2024 19:49:07: Error: La tarjeta con ID a31ca521-0a24-42ec-acff-0620ae0b6714 está inactiva.
+1/11/2024 19:49:23: Error: La tarjeta con ID 22e5e0ff-ffcc-456e-807a-486ec65f74e1 está inactiva.
+1/11/2024 19:50:40: Error: La tarjeta con ID fa85940c-d200-48f8-af06-7117913ad1e7 está inactiva.
