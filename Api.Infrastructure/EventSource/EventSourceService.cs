@@ -34,7 +34,9 @@ namespace Api.Infrastructure.EventSource
 
         public async Task SendPurchaseEventAsync(Purchase purchase, bool isSuccess)
         {
-            // Crear el mensaje completo con todos los datos necesarios
+
+            var failureReason = isSuccess ? null : "Fondos insuficientes o tarjeta inactiva";
+
             var eventMessage = new
             {
                 Id = purchase.Id,
@@ -84,14 +86,14 @@ namespace Api.Infrastructure.EventSource
                 PurchaseDate = purchase.PurchaseDate,
                 Amount = purchase.Amount,
                 Status = purchase.Status,
-                IsSuccess = isSuccess // Indica si la compra fue exitosa o no
+                IsSuccess = isSuccess,
+                FailureReason = failureReason // Agrega el motivo de la falla si isSuccess es false
             };
 
-            // Serializar el mensaje completo a JSON, ignorando propiedades nulas
             var messageContent = JsonSerializer.Serialize(eventMessage, new JsonSerializerOptions
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                WriteIndented = false // Cambia a true si prefieres una salida más legible
+                WriteIndented = false
             });
 
             ServiceBusMessage message = new ServiceBusMessage(messageContent);
