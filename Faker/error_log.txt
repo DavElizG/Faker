@@ -108,3 +108,4 @@
 1/11/2024 19:49:07: Error: La tarjeta con ID a31ca521-0a24-42ec-acff-0620ae0b6714 está inactiva.
 1/11/2024 19:49:23: Error: La tarjeta con ID 22e5e0ff-ffcc-456e-807a-486ec65f74e1 está inactiva.
 1/11/2024 19:50:40: Error: La tarjeta con ID fa85940c-d200-48f8-af06-7117913ad1e7 está inactiva.
+2/11/2024 19:38:54: Error: La tarjeta con ID 264c4bde-30d0-4da2-bc67-cff83823f8b8 está inactiva.
