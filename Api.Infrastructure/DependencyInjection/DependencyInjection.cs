@@ -5,11 +5,7 @@ using Api.Infrastructure.ErrorLog;
 using Api.Infrastructure.EventSource;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Api.Application.Services;
 using Api.Application.Services.FakeDataGenerators;
 using Api.Domain.Entities;
@@ -20,12 +16,14 @@ namespace Api.Infrastructure.DependencyInjection
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSingleton(new List<Api.Domain.Entities.Affiliate>());
-            services.AddSingleton(new List<Api.Domain.Entities.Card>());
-
+            // Registros de instancias singleton
+            services.AddSingleton(new List<Affiliate>());
+            services.AddSingleton(new List<Card>());
             services.AddSingleton<IEventSource, EventSourceService>();
             services.AddSingleton<IErrorLogService, ErrorLogService>();
-          
+            
+
+            // Registros de servicios scoped
             services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
             services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
             services.AddScoped<IPurchaseSimulationService, PurchaseSimulationService>();
@@ -33,14 +31,11 @@ namespace Api.Infrastructure.DependencyInjection
             services.AddScoped<ICardGeneratorService, FakeCardGeneratorService>();
             services.AddScoped<ICardModificationService, CardModificationService>();
             services.AddScoped<IAffiliateGeneratorService, FakeAffiliateGeneratorService>();
-            services.AddSingleton(new List<Affiliate>());
-            services.AddSingleton(new List<Card>());
 
-            services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
-            services.AddScoped<ICardModificationService, CardModificationService>();
+            // Registro de PurchaseProcessorService
+            services.AddScoped<IPurchaseProcessorService, PurchaseProcessorService>();
 
-            /////faltaban estos servicios
-            services.AddScoped<IPurchaseSimulationService, PurchaseSimulationService>();
+            // Registro del servicio de fondo para la generación automática de compras
             services.AddHostedService<PurchaseGenerationBackgroundService>();
 
             return services;

@@ -1,30 +1,70 @@
 ﻿using Api.Domain.Entities;
 using Api.Domain.Interfaces.Infraestructure;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Api.Infrastructure.ErrorLog
 {
     public class ErrorLogService : IErrorLogService
     {
-        private readonly IEventSource _eventSource;
+        private readonly HttpClient _httpClient;
 
-        public ErrorLogService(IEventSource eventSource)
+        public ErrorLogService(HttpClient httpClient)
         {
-            _eventSource = eventSource;
+            _httpClient = httpClient;
         }
 
+        // Método sincrónico con un mensaje de error por defecto y no reintentable
         public void LogFailedPurchase(Purchase purchase)
         {
-            _eventSource.SendPurchaseEvent(purchase, false);
+            SendFailedPurchaseAsync(purchase, "Error desconocido", false).Wait();
         }
 
-        public async Task LogFailedPurchaseAsync(Purchase purchase)
+        // Método sincrónico para registrar una compra fallida con mensaje y retriabilidad específicos
+        public void LogFailedPurchase(Purchase purchase, string errorMessage, bool isRetriable)
         {
-            await _eventSource.SendPurchaseEventAsync(purchase, false);
+            SendFailedPurchaseAsync(purchase, errorMessage, isRetriable).Wait();
+        }
+
+        // Método asíncrono para registrar una compra fallida con mensaje y retriabilidad específicos
+        public async Task LogFailedPurchaseAsync(Purchase purchase, string errorMessage, bool isRetriable)
+        {
+            await SendFailedPurchaseAsync(purchase, errorMessage, isRetriable);
+        }
+
+        // Método asíncrono para enviar los datos de la compra fallida al endpoint especificado
+        public async Task SendFailedPurchaseAsync(Purchase purchase, string errorMessage, bool isRetriable)
+        {
+            var failedPurchase = new
+            {
+                id = purchase.Id,
+                cardNumber = purchase.Card?.CreditCardNumber,
+                purchaseDate = purchase.PurchaseDate.ToString("o"),
+                amount = purchase.Amount,
+                status = purchase.Status.ToString(),
+                errorMessage = errorMessage,
+                isRetriable = isRetriable, // Enviar el valor correcto de isRetriable
+                createdAt = DateTime.UtcNow.ToString("o")
+            };
+
+            var jsonContent = new StringContent(JsonSerializer.Serialize(failedPurchase), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync("https://qlxkbl6c-7008.use2.devtunnels.ms/FailedPurchase", jsonContent);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Error al enviar la compra fallida: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Excepción al enviar la compra fallida: {ex.Message}");
+            }
         }
     }
 }

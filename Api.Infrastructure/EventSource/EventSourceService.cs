@@ -34,9 +34,7 @@ namespace Api.Infrastructure.EventSource
 
         public async Task SendPurchaseEventAsync(Purchase purchase, bool isSuccess)
         {
-
-            var failureReason = isSuccess ? null : "Fondos insuficientes o tarjeta inactiva";
-
+            // Crear el mensaje completo con todos los datos necesarios
             var eventMessage = new
             {
                 Id = purchase.Id,
@@ -86,32 +84,33 @@ namespace Api.Infrastructure.EventSource
                 PurchaseDate = purchase.PurchaseDate,
                 Amount = purchase.Amount,
                 Status = purchase.Status,
-                IsSuccess = isSuccess,
-                FailureReason = failureReason // Agrega el motivo de la falla si isSuccess es false
+                IsSuccess = isSuccess // Indica si la compra fue exitosa o no
             };
 
+            // Serializar el mensaje completo a JSON, ignorando propiedades nulas
             var messageContent = JsonSerializer.Serialize(eventMessage, new JsonSerializerOptions
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                WriteIndented = false
+                WriteIndented = true // Cambia a true si prefieres una salida más legible
             });
 
             ServiceBusMessage message = new ServiceBusMessage(messageContent);
 
             try
             {
+                _logger.LogInformation("Preparando para enviar mensaje al Service Bus: {MessageContent}", messageContent);
                 await _sender.SendMessageAsync(message);
-                _logger.LogInformation("Mensaje enviado: {MessageContent}", messageContent);
+                _logger.LogInformation("Mensaje enviado con éxito al Service Bus.");
+            }
+            catch (ServiceBusException sbEx)
+            {
+                _logger.LogError(sbEx, "ServiceBusException: Error al enviar mensaje: {MessageContent}", messageContent);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al enviar mensaje: {MessageContent}", messageContent);
+                _logger.LogError(ex, "Exception: Error al enviar mensaje: {MessageContent}", messageContent);
             }
         }
 
     }
 }
-
-
-
-
