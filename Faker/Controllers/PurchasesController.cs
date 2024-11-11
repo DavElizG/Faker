@@ -2,9 +2,9 @@
 using Api.Domain.Interfaces.Infraestructure;
 using Api.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Api.Application.Services;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Faker.Controllers
 {
@@ -16,14 +16,44 @@ namespace Faker.Controllers
         private readonly IErrorLogService _errorLogService;
         private readonly ICardModificationService _cardModificationService;
         private readonly IPurchaseSimulationService _purchaseSimulationService;
+        private readonly IErrorHandlingService _errorHandlingService;
+        private readonly IPurchaseRetryService _purchaseRetryService;
+        private readonly ILogger<PurchasesController> _logger;
 
-        public PurchasesController(IEventSource eventSource, IErrorLogService errorLogService, ICardModificationService cardModificationService, IPurchaseSimulationService purchaseSimulationService)
+        public PurchasesController(
+            IEventSource eventSource,
+            IErrorLogService errorLogService,
+            ICardModificationService cardModificationService,
+            IPurchaseSimulationService purchaseSimulationService,
+            IErrorHandlingService errorHandlingService,
+            IPurchaseRetryService purchaseRetryService,
+            ILogger<PurchasesController> logger) // Agregar ILogger aquí
         {
             _eventSource = eventSource;
             _errorLogService = errorLogService;
             _cardModificationService = cardModificationService;
             _purchaseSimulationService = purchaseSimulationService;
+            _errorHandlingService = errorHandlingService;
+            _purchaseRetryService = purchaseRetryService;
+            _logger = logger; // Asignar al campo _logger
         }
+
+        // Endpoint para ver las compras fallidas
+        [HttpGet("failed-purchases")]
+        public IActionResult GetFailedPurchases()
+        {
+            var failedPurchases = _purchaseRetryService.GetAllFailedPurchases();
+            if (failedPurchases == null || !failedPurchases.Any())
+            {
+                _logger.LogInformation("No se encontraron compras fallidas.");
+            }
+            else
+            {
+                _logger.LogInformation($"Se encontraron {failedPurchases.Count} compras fallidas.");
+            }
+            return Ok(failedPurchases);
+        }
+
 
         // Endpoint para generar y enviar compras al Event Source
         [HttpPost("generate")]
@@ -31,58 +61,49 @@ namespace Faker.Controllers
         {
             try
             {
-                // Lógica para generar la compra
-                // Aquí puedes agregar lógica adicional para validar y procesar la compra
-
-                // Enviar la compra al Event Source
                 await _eventSource.SendPurchaseEventAsync(purchase, true);
                 return Ok("Compra generada y enviada al Event Source.");
             }
             catch (Exception ex)
             {
-                // En caso de error, registrar la compra fallida
-                await _errorLogService.LogFailedPurchaseAsync(purchase);
+                bool isRetriable = _errorHandlingService.IsRetriableError("GeneralError");
+                await _errorLogService.LogFailedPurchaseAsync(purchase, $"Error al generar la compra: {ex.Message}", isRetriable);
                 return StatusCode(500, $"Error al generar la compra: {ex.Message}");
             }
         }
 
         // Endpoint para retry de compras fallidas
         [HttpPost("retry")]
-        public async Task<IActionResult> RetryPurchase([FromBody] Purchase purchase)
+        public async Task<IActionResult> RetryPurchase([FromBody] Guid purchaseId)
         {
             try
             {
-                // Lógica para reintentar la compra
-                // Aquí puedes agregar lógica adicional para validar y procesar la compra
-
-                // Enviar la compra al Event Source
-                await _eventSource.SendPurchaseEventAsync(purchase, true);
-                return Ok("Retry de compra exitoso y enviado al Event Source.");
+                await _purchaseRetryService.RetryFailedPurchaseByIdAsync(purchaseId);
+                return Ok("Compra reintentada y procesada exitosamente.");
             }
             catch (Exception ex)
             {
-                // En caso de error, registrar la compra fallida
-                await _errorLogService.LogFailedPurchaseAsync(purchase);
+                await _errorLogService.LogFailedPurchaseAsync(new Purchase { Id = purchaseId }, $"Error al reintentar la compra: {ex.Message}", false);
                 return StatusCode(500, $"Error al reintentar la compra: {ex.Message}");
             }
         }
 
+        // Endpoint para generar múltiples compras simuladas
         [HttpPost("generate-purchases")]
         public async Task<IActionResult> GeneratePurchases()
         {
             try
             {
-                // Inicia la simulación y envío de compras manualmente
                 await _purchaseSimulationService.SimulatePurchases();
                 return Ok("Simulación de compras iniciada exitosamente.");
             }
             catch (Exception ex)
             {
+                bool isRetriable = _errorHandlingService.IsRetriableError("GeneratePurchasesError");
+                await _errorLogService.LogFailedPurchaseAsync(new Purchase(), $"Ocurrió un error al generar las compras: {ex.Message}", isRetriable);
                 return StatusCode(500, $"Ocurrió un error al generar las compras: {ex.Message}");
             }
         }
-
-
 
         // Endpoint para editar una tarjeta
         [HttpPut("edit-card")]
@@ -90,12 +111,13 @@ namespace Faker.Controllers
         {
             try
             {
-                // Lógica para modificar la tarjeta
                 await _cardModificationService.ModifyCardAsync(card);
                 return Ok("Tarjeta modificada exitosamente.");
             }
             catch (Exception ex)
             {
+                bool isRetriable = _errorHandlingService.IsRetriableError("EditCardError");
+                await _errorLogService.LogFailedPurchaseAsync(new Purchase(), $"Error al modificar la tarjeta: {ex.Message}", isRetriable);
                 return StatusCode(500, $"Error al modificar la tarjeta: {ex.Message}");
             }
         }

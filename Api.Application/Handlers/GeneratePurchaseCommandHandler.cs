@@ -1,11 +1,11 @@
 ﻿using Api.Application.Commands;
 using Api.Application.Exceptions;
+using Api.Domain.Entities;
 using Api.Domain.Interfaces;
+using Api.Domain.Interfaces.Infraestructure;
 using MediatR;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Api.Application.Handlers
@@ -15,12 +15,17 @@ namespace Api.Application.Handlers
     {
         private readonly IPurchaseSimulationService _purchaseSimulationService;
         private readonly IErrorHandlingService _errorHandlingService;
+        private readonly IErrorLogService _errorLogService;
 
         // Constructor que inyecta los servicios necesarios
-        public GeneratePurchaseCommandHandler(IPurchaseSimulationService purchaseSimulationService, IErrorHandlingService errorHandlingService)
+        public GeneratePurchaseCommandHandler(
+            IPurchaseSimulationService purchaseSimulationService,
+            IErrorHandlingService errorHandlingService,
+            IErrorLogService errorLogService)
         {
             _purchaseSimulationService = purchaseSimulationService;
             _errorHandlingService = errorHandlingService;
+            _errorLogService = errorLogService;
         }
 
         // Método que maneja el comando GeneratePurchaseCommand
@@ -37,17 +42,32 @@ namespace Api.Application.Handlers
             catch (CardException ex)
             {
                 // Maneja las excepciones relacionadas con la tarjeta
-                _errorHandlingService.HandleCardError(ex);
+                var purchase = new Purchase(); // Crear o obtener la compra relevante
+                _errorHandlingService.HandleCardError(ex, purchase);
+
+                // Determina si es reintentable y registra el error
+                bool isRetriable = _errorHandlingService.IsRetriableError("CardError");
+                await _errorLogService.LogFailedPurchaseAsync(purchase, ex.Message, isRetriable);
             }
             catch (PurchaseStatusException ex)
             {
                 // Maneja las excepciones relacionadas con el estado de la compra
-                _errorHandlingService.HandlePurchaseStatusError(ex);
+                var purchase = new Purchase(); // Crear o obtener la compra relevante
+                _errorHandlingService.HandlePurchaseStatusError(ex, purchase);
+
+                // Determina si es reintentable y registra el error
+                bool isRetriable = _errorHandlingService.IsRetriableError("PurchaseStatusError");
+                await _errorLogService.LogFailedPurchaseAsync(purchase, ex.Message, isRetriable);
             }
             catch (Exception ex)
             {
                 // Maneja cualquier otra excepción
-                _errorHandlingService.HandleError(ex);
+                var purchase = new Purchase(); // Crear o obtener la compra relevante
+                _errorHandlingService.HandleError(ex, purchase);
+
+                // Determina si es reintentable y registra el error como no reintentable
+                bool isRetriable = false;
+                await _errorLogService.LogFailedPurchaseAsync(purchase, $"Error general: {ex.Message}", isRetriable);
             }
 
             // Retorna un valor Unit para indicar que el comando se ha manejado correctamente

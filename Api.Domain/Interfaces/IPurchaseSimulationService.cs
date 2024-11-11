@@ -13,5 +13,7 @@ namespace Api.Domain.Interfaces
         Task SimulatePurchaseAsync(); // Método para simular una compra individual
         bool ProcessPurchase(Purchase purchase, Card card);
         Task<bool> ProcessPurchaseAsync(Purchase purchase, Card card);
+        Task<Purchase> GetPurchaseByIdAsync(Guid purchaseId);
+        void AddPurchase(Purchase purchase); // Nuevo método para agregar una compra
     }
 }
