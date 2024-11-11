@@ -15,6 +15,7 @@ namespace Api.Application.Services
     public class PurchaseSimulationService : IPurchaseSimulationService
     {
         private readonly List<Purchase> _purchases = new List<Purchase>();
+        private readonly List<object> _errorLogs = new List<object>(); // Lista para almacenar errores
         private readonly IErrorHandlingService _errorHandlingService;
         private readonly IEventSource _eventSource;
         private readonly IAffiliateGeneratorService _affiliateGeneratorService;
@@ -37,6 +38,8 @@ namespace Api.Application.Services
             _productGeneratorService = productGeneratorService;
             _logger = logger;
         }
+
+        public List<object> GetErrorLogs() => _errorLogs; // Método para obtener los errores registrados
 
         public void GeneratePurchases(List<Product> products, List<Affiliate> affiliates, List<Card> cards, int count)
         {
@@ -86,91 +89,203 @@ namespace Api.Application.Services
             await ProcessPurchaseAsync(purchase, card);
         }
 
+        public bool ProcessPurchase(Purchase purchase, Card card)
+        {
+            // Llamamos al método asincrónico y obtenemos el resultado de forma sincrónica
+            return ProcessPurchaseAsync(purchase, card).GetAwaiter().GetResult();
+        }
+
         public async Task<bool> ProcessPurchaseAsync(Purchase purchase, Card card)
         {
+            bool isSuccess = true;
+
             try
             {
                 _logger.LogInformation("Procesando compra {PurchaseId}.", purchase.Id);
                 decimal totalPurchaseAmount = purchase.Product.Price;
 
+                // Validación de fondos insuficientes
                 if (card.Funds < totalPurchaseAmount)
                 {
                     _logger.LogWarning("Fondos insuficientes para la tarjeta {CardId}.", card.Id);
                     _errorHandlingService.HandleNoFundsError(card.Id);
-                    return false;
+
+                    // Registrar el error en la lista de errores
+                    _errorLogs.Add(new
+                    {
+                        Type = "NoFunds",
+                        CardId = card.Id,
+                        PurchaseId = purchase.Id,
+                        Message = "Fondos insuficientes para realizar la compra",
+                        AmountAttempted = totalPurchaseAmount
+                    });
+
+                    isSuccess = false;
                 }
 
+                // Validación de tarjeta inactiva
                 if (card.Status == CardStatus.Inactive)
                 {
                     _logger.LogWarning("La tarjeta {CardId} está inactiva.", card.Id);
                     _errorHandlingService.HandleInactiveCardError(card.Id);
-                    return false;
+
+                    // Registrar el error en la lista de errores
+                    _errorLogs.Add(new
+                    {
+                        Type = "InactiveCard",
+                        CardId = card.Id,
+                        PurchaseId = purchase.Id,
+                        Message = "La tarjeta está inactiva"
+                    });
+
+                    isSuccess = false;
                 }
 
-                card.Funds -= totalPurchaseAmount;
-                await _eventSource.SendPurchaseEventAsync(purchase, true);
-                _logger.LogInformation("Compra {PurchaseId} procesada exitosamente.", purchase.Id);
-                return true;
+                // Validación de tarjeta expirada
+                if (card.ExpiryDate < DateTime.UtcNow)
+                {
+                    _logger.LogWarning("La tarjeta {CardId} ha expirado.", card.Id);
+                    _errorHandlingService.HandleCardExpiredError(card.Id);
+
+                    // Registrar el error en la lista de errores
+                    _errorLogs.Add(new
+                    {
+                        Type = "CardExpired",
+                        CardId = card.Id,
+                        PurchaseId = purchase.Id,
+                        Message = "La tarjeta ha expirado",
+                        ExpiryDate = card.ExpiryDate
+                    });
+
+                    isSuccess = false;
+                }
+
+                // Validación de límite de transacción
+                decimal transactionLimit = 1000; // Por ejemplo, límite de $1000
+                if (totalPurchaseAmount > transactionLimit)
+                {
+                    _logger.LogWarning("Límite de transacción excedido para la tarjeta {CardId}.", card.Id);
+                    _errorHandlingService.HandleTransactionLimitExceededError(card.Id, totalPurchaseAmount);
+
+                    // Registrar el error en la lista de errores
+                    _errorLogs.Add(new
+                    {
+                        Type = "TransactionLimitExceeded",
+                        CardId = card.Id,
+                        PurchaseId = purchase.Id,
+                        Message = "Límite de transacción excedido",
+                        AmountAttempted = totalPurchaseAmount,
+                        TransactionLimit = transactionLimit
+                    });
+
+                    isSuccess = false;
+                }
+
+                // Validación de fraude detectado
+                bool isFraudulent = DetectFraud(card); // Método ficticio para detectar fraude
+                if (isFraudulent)
+                {
+                    _logger.LogWarning("Actividad fraudulenta detectada para la tarjeta {CardId}.", card.Id);
+                    _errorHandlingService.HandleFraudDetectedError(card.Id);
+
+                    // Registrar el error en la lista de errores
+                    _errorLogs.Add(new
+                    {
+                        Type = "FraudDetected",
+                        CardId = card.Id,
+                        PurchaseId = purchase.Id,
+                        Message = "Actividad fraudulenta detectada"
+                    });
+
+                    isSuccess = false;
+                }
+
+                if (isSuccess)
+                {
+                    // Si la compra es exitosa, deduce los fondos y envía el evento al Event Storage
+                    card.Funds -= totalPurchaseAmount;
+                    await _eventSource.SendPurchaseEventAsync(purchase, isSuccess);
+                    _logger.LogInformation("Evento de compra {PurchaseId} enviado al Event Storage con estado IsSuccess = {IsSuccess}.", purchase.Id, isSuccess);
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al procesar la compra {PurchaseId}.", purchase.Id);
                 _errorHandlingService.HandleError(ex);
-                return false;
+
+                // Registrar el error en la lista de errores
+                _errorLogs.Add(new
+                {
+                    Type = "GeneralError",
+                    PurchaseId = purchase.Id,
+                    Message = ex.Message
+                });
+
+                isSuccess = false;
             }
+
+            if (!isSuccess)
+            {
+                // Si la compra falló, no enviamos al Event Source. Simplemente registramos el error.
+                _logger.LogWarning("Compra fallida para el PurchaseId {PurchaseId}. El error ha sido registrado.", purchase.Id);
+            }
+
+            return isSuccess;
         }
 
-        public bool ProcessPurchase(Purchase purchase, Card card)
+        // Método ficticio para simular detección de fraude
+        private bool DetectFraud(Card card)
         {
-            return ProcessPurchaseAsync(purchase, card).GetAwaiter().GetResult();
+            // Aquí podrías implementar lógica real de detección de fraude o una simulación
+            // Ejemplo: si la tarjeta es de cierto tipo, marca como fraude
+            return card.Brand == "FraudulentBrand"; // Ejemplo condicional
         }
 
         public async Task SimulatePurchases()
         {
             _logger.LogInformation("Iniciando simulación de compras...");
 
-            // Generar afiliados si no existen
             var affiliates = _affiliateGeneratorService.GetAffiliates();
             if (!affiliates.Any())
             {
-                _affiliateGeneratorService.GenerateAffiliates(5);  // Genera 5 afiliados
+                _affiliateGeneratorService.GenerateAffiliates(5);
                 affiliates = _affiliateGeneratorService.GetAffiliates();
             }
 
-            // Generar productos si no existen
             var products = _productGeneratorService.GetProducts();
             if (!products.Any())
             {
                 foreach (var affiliate in affiliates)
                 {
-                    _productGeneratorService.GenerateProducts(affiliate.Id, 5); // Genera 5 productos por afiliado
+                    _productGeneratorService.GenerateProducts(affiliate.Id, 5);
                 }
                 products = _productGeneratorService.GetProducts();
             }
 
-            // Generar tarjetas si no existen
             var cards = _cardGeneratorService.GetCards();
             if (!cards.Any())
             {
-                _cardGeneratorService.GenerateCards(10); // Genera 10 tarjetas
+                _cardGeneratorService.GenerateCards(10);
                 cards = _cardGeneratorService.GetCards();
             }
 
-            // Verificar que todos los datos necesarios estén disponibles
             if (!affiliates.Any() || !products.Any() || !cards.Any())
             {
                 _logger.LogError("No se generaron datos suficientes para completar la simulación de compras.");
                 throw new InvalidOperationException("Datos insuficientes para la simulación de compras.");
             }
 
-            _logger.LogInformation("Datos generados: {AffiliatesCount} afiliados, {ProductsCount} productos, {CardsCount} tarjetas.",
-                                    affiliates.Count, products.Count, cards.Count);
-
-            // Generar y procesar compras
             GeneratePurchases(products, affiliates, cards, 10);
-            _logger.LogInformation("Compras generadas. Simulando una compra...");
 
-            await SimulatePurchaseAsync();
+            foreach (var purchase in _purchases)
+            {
+                var card = cards.FirstOrDefault(c => c.Id == purchase.CardId);
+                if (card != null)
+                {
+                    await ProcessPurchaseAsync(purchase, card);
+                }
+            }
+
             _logger.LogInformation("Simulación de compras completada.");
         }
     }

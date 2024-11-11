@@ -1,10 +1,9 @@
 ﻿using Api.Domain.Entities;
-using Api.Domain.Interfaces.Infraestructure;
 using Api.Domain.Interfaces;
+using Api.Domain.Interfaces.Infraestructure;
 using Microsoft.AspNetCore.Mvc;
-using Api.Application.Services;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using System;
+using System.Threading.Tasks;
 
 namespace Faker.Controllers
 {
@@ -17,7 +16,11 @@ namespace Faker.Controllers
         private readonly ICardModificationService _cardModificationService;
         private readonly IPurchaseSimulationService _purchaseSimulationService;
 
-        public PurchasesController(IEventSource eventSource, IErrorLogService errorLogService, ICardModificationService cardModificationService, IPurchaseSimulationService purchaseSimulationService)
+        public PurchasesController(
+            IEventSource eventSource,
+            IErrorLogService errorLogService,
+            ICardModificationService cardModificationService,
+            IPurchaseSimulationService purchaseSimulationService)
         {
             _eventSource = eventSource;
             _errorLogService = errorLogService;
@@ -32,9 +35,6 @@ namespace Faker.Controllers
             try
             {
                 // Lógica para generar la compra
-                // Aquí puedes agregar lógica adicional para validar y procesar la compra
-
-                // Enviar la compra al Event Source
                 await _eventSource.SendPurchaseEventAsync(purchase, true);
                 return Ok("Compra generada y enviada al Event Source.");
             }
@@ -53,9 +53,6 @@ namespace Faker.Controllers
             try
             {
                 // Lógica para reintentar la compra
-                // Aquí puedes agregar lógica adicional para validar y procesar la compra
-
-                // Enviar la compra al Event Source
                 await _eventSource.SendPurchaseEventAsync(purchase, true);
                 return Ok("Retry de compra exitoso y enviado al Event Source.");
             }
@@ -67,6 +64,7 @@ namespace Faker.Controllers
             }
         }
 
+        // Endpoint para iniciar la simulación y generación de compras
         [HttpPost("generate-purchases")]
         public async Task<IActionResult> GeneratePurchases()
         {
@@ -82,8 +80,6 @@ namespace Faker.Controllers
             }
         }
 
-
-
         // Endpoint para editar una tarjeta
         [HttpPut("edit-card")]
         public async Task<IActionResult> EditCard([FromBody] Card card)
@@ -98,6 +94,14 @@ namespace Faker.Controllers
             {
                 return StatusCode(500, $"Error al modificar la tarjeta: {ex.Message}");
             }
+        }
+
+        // Endpoint para obtener todos los errores registrados en el proceso de simulación de compras
+        [HttpGet("all-errors")]
+        public IActionResult GetAllErrors()
+        {
+            var errors = _purchaseSimulationService.GetErrorLogs();
+            return Ok(errors);
         }
     }
 }

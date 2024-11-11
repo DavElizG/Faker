@@ -14,7 +14,6 @@ namespace Api.Application.Services
         private readonly ILogger<PurchaseGenerationBackgroundService> _logger;
         private readonly TimeSpan _interval = TimeSpan.FromSeconds(5);
 
-
         public PurchaseGenerationBackgroundService(IServiceProvider serviceProvider, ILogger<PurchaseGenerationBackgroundService> logger)
         {
             _serviceProvider = serviceProvider;
@@ -29,7 +28,6 @@ namespace Api.Application.Services
             {
                 try
                 {
-                    // Crear un nuevo scope para cada ejecución
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var purchaseSimulationService = scope.ServiceProvider.GetRequiredService<IPurchaseSimulationService>();

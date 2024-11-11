@@ -14,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
 builder.Services.AddScoped<ICardModificationService, CardModificationService>();
+builder.Services.AddHostedService<PurchaseGenerationBackgroundService>();
+
 
 // Resto de la configuración de servicios
 builder.Services.AddControllers();
