@@ -96,6 +96,7 @@ namespace Api.Application.Services
         }
 
         #region
+        
         public async Task<bool> ProcessPurchaseAsync(Purchase purchase, Card card)
         {
             bool isSuccess = true;
@@ -194,8 +195,8 @@ namespace Api.Application.Services
             return isSuccess;
         }
 
-
         #endregion
+
         public bool ProcessPurchase(Purchase purchase, Card card)
         {
             return ProcessPurchaseAsync(purchase, card).GetAwaiter().GetResult();
@@ -249,8 +250,8 @@ namespace Api.Application.Services
 
             _logger.LogInformation("Simulación de compras completada.");
         }
-
-
+        
+        
         private bool DetectFraud(Card card)
         {
             if (card.Brand == "FraudulentBrand")

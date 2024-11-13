@@ -10,6 +10,8 @@ namespace Api.Domain.Interfaces.Infraestructure
     public interface IErrorLogService
     {
         void LogFailedPurchase(Purchase purchase);
-        Task LogFailedPurchaseAsync(Purchase purchase);
+        void LogFailedPurchase(Purchase purchase, string errorMessage, bool isRetriable); // Nueva sobrecarga
+        Task LogFailedPurchaseAsync(Purchase purchase, string errorMessage, bool isRetriable);
+        Task SendFailedPurchaseAsync(Purchase purchase, string errorMessage, bool isRetriable);
     }
 }

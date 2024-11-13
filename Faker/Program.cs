@@ -8,17 +8,17 @@ using Api.Infrastructure.EventSource;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
-
 builder.Services.AddInfrastructureServices(builder.Configuration);
+//Funcional
+// Registrar HttpClient para IErrorLogService
+builder.Services.AddHttpClient<IErrorLogService, ErrorLogService>();
+
 
 
 // Resto de la configuración de servicios
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 
 builder.Services.AddCors(options =>
 {
@@ -30,7 +30,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {
