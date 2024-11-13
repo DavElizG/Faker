@@ -1,9 +1,9 @@
 ﻿using Api.Domain.Entities;
-using Api.Domain.Interfaces.Infraestructure;
 using Api.Domain.Interfaces;
+using Api.Domain.Interfaces.Infraestructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Faker.Controllers
@@ -19,6 +19,7 @@ namespace Faker.Controllers
         private readonly IErrorHandlingService _errorHandlingService;
         private readonly IPurchaseRetryService _purchaseRetryService;
         private readonly ILogger<PurchasesController> _logger;
+        private readonly IFailedPurchaseStore _failedPurchaseStore;
 
         public PurchasesController(
             IEventSource eventSource,
@@ -27,7 +28,8 @@ namespace Faker.Controllers
             IPurchaseSimulationService purchaseSimulationService,
             IErrorHandlingService errorHandlingService,
             IPurchaseRetryService purchaseRetryService,
-            ILogger<PurchasesController> logger) // Agregar ILogger aquí
+            IFailedPurchaseStore failedPurchaseStore,
+            ILogger<PurchasesController> logger)
         {
             _eventSource = eventSource;
             _errorLogService = errorLogService;
@@ -35,7 +37,8 @@ namespace Faker.Controllers
             _purchaseSimulationService = purchaseSimulationService;
             _errorHandlingService = errorHandlingService;
             _purchaseRetryService = purchaseRetryService;
-            _logger = logger; // Asignar al campo _logger
+            _logger = logger;
+            _failedPurchaseStore = failedPurchaseStore;
         }
 
         // Endpoint para ver las compras fallidas
@@ -46,66 +49,40 @@ namespace Faker.Controllers
             if (failedPurchases == null || !failedPurchases.Any())
             {
                 _logger.LogInformation("No se encontraron compras fallidas.");
+                return NotFound("No se encontraron compras fallidas.");
             }
             else
             {
                 _logger.LogInformation($"Se encontraron {failedPurchases.Count} compras fallidas.");
-            }
-            return Ok(failedPurchases);
-        }
-
-
-        // Endpoint para generar y enviar compras al Event Source
-        [HttpPost("generate")]
-        public async Task<IActionResult> GeneratePurchase([FromBody] Purchase purchase)
-        {
-            try
-            {
-                await _eventSource.SendPurchaseEventAsync(purchase, true);
-                return Ok("Compra generada y enviada al Event Source.");
-            }
-            catch (Exception ex)
-            {
-                bool isRetriable = _errorHandlingService.IsRetriableError("GeneralError");
-                await _errorLogService.LogFailedPurchaseAsync(purchase, $"Error al generar la compra: {ex.Message}", isRetriable);
-                return StatusCode(500, $"Error al generar la compra: {ex.Message}");
+                return Ok(failedPurchases);
             }
         }
 
-        // Endpoint para retry de compras fallidas
-        [HttpPost("retry")]
-        public async Task<IActionResult> RetryPurchase([FromBody] Guid purchaseId)
+        // Endpoint para reintentar una compra fallida por ID
+        [HttpPost("retry/{purchaseId}")]
+        public async Task<IActionResult> RetryFailedPurchase([FromRoute] Guid purchaseId)
         {
             try
             {
-                await _purchaseRetryService.RetryFailedPurchaseByIdAsync(purchaseId);
-                return Ok("Compra reintentada y procesada exitosamente.");
+                var result = await _purchaseRetryService.RetryFailedPurchaseByIdAsync(purchaseId);
+                if (result)
+                {
+                    _logger.LogInformation($"Compra {purchaseId} reintentada exitosamente.");
+                    return Ok($"Compra {purchaseId} reintentada exitosamente.");
+                }
+                else
+                {
+                    _logger.LogWarning($"Reintento fallido para la compra {purchaseId}.");
+                    return BadRequest($"Reintento fallido para la compra {purchaseId}.");
+                }
             }
             catch (Exception ex)
             {
-                await _errorLogService.LogFailedPurchaseAsync(new Purchase { Id = purchaseId }, $"Error al reintentar la compra: {ex.Message}", false);
+                _logger.LogError(ex, $"Error al reintentar la compra: {ex.Message}");
                 return StatusCode(500, $"Error al reintentar la compra: {ex.Message}");
             }
         }
 
-        // Endpoint para generar múltiples compras simuladas
-        [HttpPost("generate-purchases")]
-        public async Task<IActionResult> GeneratePurchases()
-        {
-            try
-            {
-                await _purchaseSimulationService.SimulatePurchases();
-                return Ok("Simulación de compras iniciada exitosamente.");
-            }
-            catch (Exception ex)
-            {
-                bool isRetriable = _errorHandlingService.IsRetriableError("GeneratePurchasesError");
-                await _errorLogService.LogFailedPurchaseAsync(new Purchase(), $"Ocurrió un error al generar las compras: {ex.Message}", isRetriable);
-                return StatusCode(500, $"Ocurrió un error al generar las compras: {ex.Message}");
-            }
-        }
-
-        // Endpoint para editar una tarjeta
         [HttpPut("edit-card")]
         public async Task<IActionResult> EditCard([FromBody] Card card)
         {
