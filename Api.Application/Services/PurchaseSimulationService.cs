@@ -14,6 +14,7 @@ namespace Api.Application.Services
 {
     public class PurchaseSimulationService : IPurchaseSimulationService
     {
+        private readonly IFailedPurchaseStore _failedPurchaseStore;
         private readonly List<Purchase> _purchases = new List<Purchase>();
         private readonly List<object> _errorLogs = new List<object>();
         private readonly IErrorHandlingService _errorHandlingService;
@@ -23,7 +24,6 @@ namespace Api.Application.Services
         private readonly IProductGeneratorService _productGeneratorService;
         private readonly ILogger<PurchaseSimulationService> _logger;
         private readonly IErrorLogService _errorLogService;
-        private readonly IPurchaseRetryService _purchaseRetryService;
 
         public PurchaseSimulationService(
             IErrorHandlingService errorHandlingService,
@@ -33,7 +33,7 @@ namespace Api.Application.Services
             IProductGeneratorService productGeneratorService,
             ILogger<PurchaseSimulationService> logger,
             IErrorLogService errorLogService,
-            IPurchaseRetryService purchaseRetryService)
+            IFailedPurchaseStore failedPurchaseStore)
         {
             _errorHandlingService = errorHandlingService;
             _eventSource = eventSource;
@@ -42,7 +42,9 @@ namespace Api.Application.Services
             _productGeneratorService = productGeneratorService;
             _logger = logger;
             _errorLogService = errorLogService;
-            _purchaseRetryService = purchaseRetryService;
+            _failedPurchaseStore = failedPurchaseStore;
+            Console.WriteLine($"PurchaseSimulationService instance created. FailedPurchaseStore hash code: {_failedPurchaseStore.GetHashCode()}");
+
         }
 
         public List<object> GetErrorLogs() => _errorLogs;
@@ -61,7 +63,7 @@ namespace Api.Application.Services
                 .RuleFor(p => p.Card, f => f.PickRandom(cards))
                 .RuleFor(p => p.PurchaseDate, f => f.Date.Past(1))
                 .RuleFor(p => p.Amount, (f, p) => p.Product.Price)
-                .RuleFor(p => p.Status, f => f.PickRandom<PurchaseStatus>());
+                .RuleFor(p => p.Status, PurchaseStatus.Pending);
 
             _purchases.AddRange(faker.Generate(count));
             _logger.LogInformation("Se generaron {Count} compras.", count);
@@ -74,7 +76,7 @@ namespace Api.Application.Services
             if (_purchases.Count == 0)
             {
                 _logger.LogError("No hay compras disponibles. Por favor, genera compras primero.");
-                throw new InvalidOperationException("No purchases available. Please generate purchases first.");
+                throw new InvalidOperationException("No hay compras disponibles. Por favor, genera compras primero.");
             }
 
             return _purchases[new Random().Next(_purchases.Count)];
@@ -89,14 +91,12 @@ namespace Api.Application.Services
             if (card == null)
             {
                 _logger.LogError("No se encontró una tarjeta válida para la compra.");
-                throw new InvalidOperationException("No card available for the purchase.");
+                throw new InvalidOperationException("No se encontró una tarjeta válida para la compra.");
             }
 
             await ProcessPurchaseAsync(purchase, card);
         }
 
-        #region
-        
         public async Task<bool> ProcessPurchaseAsync(Purchase purchase, Card card)
         {
             bool isSuccess = true;
@@ -176,7 +176,16 @@ namespace Api.Application.Services
 
                     if (isRetriable)
                     {
-                        _purchaseRetryService.AddFailedPurchase(purchase);
+                        if (_failedPurchaseStore.GetFailedPurchaseById(purchase.Id) == null)
+                        {
+                            _failedPurchaseStore.AddFailedPurchase(purchase);
+                            _logger.LogInformation($"Compra fallida añadida al FailedPurchaseStore: {purchase.Id}");
+                            _logger.LogInformation($"Total de compras fallidas almacenadas: {_failedPurchaseStore.GetAllFailedPurchases().Count}");
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"La compra {purchase.Id} ya está en el FailedPurchaseStore.");
+                        }
                     }
                 }
             }
@@ -194,8 +203,6 @@ namespace Api.Application.Services
 
             return isSuccess;
         }
-
-        #endregion
 
         public bool ProcessPurchase(Purchase purchase, Card card)
         {
@@ -244,14 +251,13 @@ namespace Api.Application.Services
                 if (card != null)
                 {
                     await ProcessPurchaseAsync(purchase, card);
-                    await Task.Delay(TimeSpan.FromSeconds(5)); // Espera de 5 segundos entre cada compra
+                    await Task.Delay(TimeSpan.FromSeconds(5)); // Espera de 10 segundos entre cada compra
                 }
             }
 
             _logger.LogInformation("Simulación de compras completada.");
         }
-        
-        
+
         private bool DetectFraud(Card card)
         {
             if (card.Brand == "FraudulentBrand")

@@ -21,19 +21,16 @@ namespace Api.Infrastructure.DependencyInjection
             services.AddSingleton(new List<Card>());
             services.AddSingleton<IEventSource, EventSourceService>();
             services.AddSingleton<IErrorLogService, ErrorLogService>();
-            
+            services.AddSingleton<IFailedPurchaseStore, FailedPurchaseStore>();
 
             // Registros de servicios scoped
             services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
-            services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
             services.AddScoped<IPurchaseSimulationService, PurchaseSimulationService>();
+            services.AddScoped<IPurchaseRetryService, PurchaseRetryService>();
             services.AddScoped<IProductGeneratorService, FakeProductGeneratorService>();
             services.AddScoped<ICardGeneratorService, FakeCardGeneratorService>();
             services.AddScoped<ICardModificationService, CardModificationService>();
             services.AddScoped<IAffiliateGeneratorService, FakeAffiliateGeneratorService>();
-
-            // Registro de PurchaseProcessorService
-            services.AddScoped<IPurchaseProcessorService, PurchaseProcessorService>();
 
             // Registro del servicio de fondo para la generación automática de compras
             services.AddHostedService<PurchaseGenerationBackgroundService>();
