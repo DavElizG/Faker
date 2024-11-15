@@ -14,5 +14,8 @@ namespace Api.Domain.Interfaces
         void AddFailedPurchase(Purchase purchase); // Agregar una compra fallida
         Task<bool> RetryFailedPurchaseByIdAsync(Guid purchaseId); // Nuevo: reintento de una compra específica
         List<Purchase> GetAllFailedPurchases(); // Nuevo: obtener todas las compras fallidas
+
+
+        
     }
 }
