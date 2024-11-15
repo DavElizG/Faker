@@ -73,7 +73,7 @@ namespace Faker.Controllers
                 else
                 {
                     _logger.LogWarning($"Reintento fallido para la compra {purchaseId}.");
-                    return BadRequest($"Reintento fallido para la compra {purchaseId}.");
+                    return BadRequest($"Reintento fallido para la compra {purchaseId}. Verifique el estado de la tarjeta o error específico.");
                 }
             }
             catch (Exception ex)

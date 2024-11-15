@@ -44,7 +44,6 @@ namespace Api.Application.Services
             _errorLogService = errorLogService;
             _failedPurchaseStore = failedPurchaseStore;
             Console.WriteLine($"PurchaseSimulationService instance created. FailedPurchaseStore hash code: {_failedPurchaseStore.GetHashCode()}");
-
         }
 
         public List<object> GetErrorLogs() => _errorLogs;
@@ -163,7 +162,16 @@ namespace Api.Application.Services
                 {
                     purchase.Status = PurchaseStatus.Completed;
                     card.Funds -= totalPurchaseAmount;
-                    await _eventSource.SendPurchaseEventAsync(purchase, isSuccess);
+
+                    // Verificar si estaba en la lista de fallidas y enviarlo como exitoso si es así
+                    if (_failedPurchaseStore.GetFailedPurchaseById(purchase.Id) != null)
+                    {
+                        _failedPurchaseStore.RemoveFailedPurchase(purchase);
+                        _logger.LogInformation($"Compra {purchase.Id} procesada exitosamente y eliminada de la lista de fallidas.");
+                    }
+
+                    // Enviar el evento de éxito al Service Bus
+                    await _eventSource.SendPurchaseEventAsync(purchase, true);
                     _logger.LogInformation("Evento de compra {PurchaseId} enviado al Event Storage con estado IsSuccess = {IsSuccess}.", purchase.Id, isSuccess);
                 }
                 else
@@ -251,7 +259,7 @@ namespace Api.Application.Services
                 if (card != null)
                 {
                     await ProcessPurchaseAsync(purchase, card);
-                    await Task.Delay(TimeSpan.FromSeconds(5)); // Espera de 10 segundos entre cada compra
+                    await Task.Delay(TimeSpan.FromSeconds(3)); // Espera de 1 segundo entre cada compra
                 }
             }
 
