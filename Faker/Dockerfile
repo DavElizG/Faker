@@ -10,7 +10,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Copiar el archivo .csproj desde su ubicación
-COPY ["src/Faker.csproj", "./"]
+COPY ["Faker/Faker.csproj", "./"]
 
 # Restaurar dependencias para todos los proyectos
 RUN dotnet restore "./Faker.csproj"
