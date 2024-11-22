@@ -54,7 +54,7 @@ namespace Api.Infrastructure.ErrorLog
 
             try
             {
-                var response = await _httpClient.PostAsync("https://ptgzg54q-7209.use2.devtunnels.ms/api/ErrorLog", jsonContent);
+                var response = await _httpClient.PostAsync("https://pwxs1xbn-7209.use2.devtunnels.ms/api/ErrorLog", jsonContent);
 
                 if (!response.IsSuccessStatusCode)
                 {

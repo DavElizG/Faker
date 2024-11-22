@@ -262,7 +262,7 @@ namespace Api.Application.Services
                 if (card != null)
                 {
                     await ProcessPurchaseAsync(purchase, card);
-                    await Task.Delay(TimeSpan.FromMinutes(3)); 
+                    await Task.Delay(TimeSpan.FromSeconds(20)); 
                 }
             }
 
