@@ -54,7 +54,7 @@ namespace Api.Infrastructure.ErrorLog
 
             try
             {
-                var response = await _httpClient.PostAsync("https://qlxkbl6c-7008.use2.devtunnels.ms/FailedPurchase", jsonContent);
+                var response = await _httpClient.PostAsync("https://ptgzg54q-7209.use2.devtunnels.ms/api/ErrorLog", jsonContent);
 
                 if (!response.IsSuccessStatusCode)
                 {

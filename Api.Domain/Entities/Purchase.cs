@@ -10,8 +10,7 @@ namespace Api.Domain.Entities
     public class Purchase
     {
         public Guid Id { get; set; }
-        public Guid ProductId { get; set; }
-        public Product Product { get; set; }
+        public List<Product> Products { get; set; } = new List<Product>();
         public Guid AffiliateId { get; set; }
         public Affiliate Affiliate { get; set; }
         public Guid CardId { get; set; }

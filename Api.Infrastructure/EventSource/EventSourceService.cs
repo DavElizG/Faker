@@ -38,26 +38,25 @@ namespace Api.Infrastructure.EventSource
             var eventMessage = new
             {
                 Id = purchase.Id,
-                ProductId = purchase.ProductId,
-                Product = purchase.Product == null ? null : new
+                Products = purchase.Products?.Select(product => new
                 {
-                    purchase.Product.Id,
-                    purchase.Product.Name,
-                    purchase.Product.Description,
-                    purchase.Product.Price,
-                    purchase.Product.Category,
-                    purchase.Product.Stock,
-                    purchase.Product.AffiliateId,
-                    Affiliate = purchase.Product.Affiliate == null ? null : new
+                    product.Id,
+                    product.Name,
+                    product.Description,
+                    product.Price,
+                    product.Category,
+                    product.Stock,
+                    product.AffiliateId,
+                    Affiliate = product.Affiliate == null ? null : new
                     {
-                        purchase.Product.Affiliate.Id,
-                        purchase.Product.Affiliate.Name,
-                        purchase.Product.Affiliate.Address,
-                        purchase.Product.Affiliate.PhoneNumber,
-                        purchase.Product.Affiliate.Email,
-                        purchase.Product.Affiliate.Website
+                        product.Affiliate.Id,
+                        product.Affiliate.Name,
+                        product.Affiliate.Address,
+                        product.Affiliate.PhoneNumber,
+                        product.Affiliate.Email,
+                        product.Affiliate.Website
                     }
-                },
+                }).ToList(),
                 AffiliateId = purchase.AffiliateId,
                 Affiliate = purchase.Affiliate == null ? null : new
                 {
@@ -111,6 +110,5 @@ namespace Api.Infrastructure.EventSource
                 _logger.LogError(ex, "Exception: Error al enviar mensaje: {MessageContent}", messageContent);
             }
         }
-
     }
 }

@@ -54,19 +54,19 @@ namespace Api.Application.Services
 
             var faker = new Faker<Purchase>()
                 .RuleFor(p => p.Id, f => Guid.NewGuid())
-                .RuleFor(p => p.ProductId, f => f.PickRandom(products).Id)
-                .RuleFor(p => p.Product, f => f.PickRandom(products))
-                .RuleFor(p => p.AffiliateId, (f, p) => p.Product.AffiliateId)
-                .RuleFor(p => p.Affiliate, (f, p) => p.Product.Affiliate)
+                .RuleFor(p => p.Products, f => f.PickRandom(products, f.Random.Int(1, 5)).ToList())
+                .RuleFor(p => p.AffiliateId, (f, p) => p.Products.First().AffiliateId)
+                .RuleFor(p => p.Affiliate, (f, p) => p.Products.First().Affiliate)
                 .RuleFor(p => p.CardId, f => f.PickRandom(cards).Id)
                 .RuleFor(p => p.Card, f => f.PickRandom(cards))
                 .RuleFor(p => p.PurchaseDate, f => f.Date.Past(1))
-                .RuleFor(p => p.Amount, (f, p) => p.Product.Price)
+                .RuleFor(p => p.Amount, (f, p) => p.Products.Sum(product => product.Price))
                 .RuleFor(p => p.Status, PurchaseStatus.Pending);
 
             _purchases.AddRange(faker.Generate(count));
             _logger.LogInformation("Se generaron {Count} compras.", count);
         }
+
 
         public List<Purchase> GetPurchases() => _purchases;
 
@@ -106,7 +106,7 @@ namespace Api.Application.Services
             try
             {
                 _logger.LogInformation("Procesando compra {PurchaseId}.", purchase.Id);
-                decimal totalPurchaseAmount = purchase.Product.Price;
+                decimal totalPurchaseAmount = purchase.Products.Sum(product => product.Price);
                 var random = new Random();
 
                 purchase.Status = PurchaseStatus.Pending;
@@ -156,6 +156,10 @@ namespace Api.Application.Services
                     errorMessage = "Actividad fraudulenta detectada";
                     errorType = "FraudDetected";
                     isSuccess = false;
+                }
+                else if (random.NextDouble() < 0.05) // Probabilidad de fallo no controlado
+                {
+                    throw new InvalidOperationException("Fallo no controlado simulado.");
                 }
 
                 if (isSuccess)
@@ -252,7 +256,6 @@ namespace Api.Application.Services
             }
 
             GeneratePurchases(products, affiliates, cards, 10);
-
             foreach (var purchase in _purchases)
             {
                 var card = cards.FirstOrDefault(c => c.Id == purchase.CardId);
@@ -284,7 +287,10 @@ namespace Api.Application.Services
                 return true;
             }
 
-            var distinctLocations = recentPurchases.Select(p => p.Product.Affiliate.Address).Distinct().Count();
+            var distinctLocations = recentPurchases
+                .SelectMany(p => p.Products.Select(product => product.Affiliate.Address))
+                .Distinct()
+                .Count();
             if (distinctLocations > 3)
             {
                 return true;
